@@ -58,8 +58,34 @@ public class MemorySpace {
 	 * @return the base address of the allocated block, or -1 if unable to allocate
 	 */
 	public int malloc(int length) {		
-		//// Replace the following statement with your code
-		return -1;
+		MemoryBlock tempBlock = null;
+		ListIterator iterator = freeList.iterator();
+
+		while (iterator.hasNext()) {
+			MemoryBlock tempIterator = iterator.next();
+
+			if (tempIterator.length >= length){
+				tempBlock = tempIterator;
+				break;
+			}
+		}
+		
+		if (tempBlock == null){
+			return -1;
+		}
+
+		MemoryBlock temp = new MemoryBlock(tempBlock.baseAddress, length);
+		
+		allocatedList.addLast(temp);
+		if (length == tempBlock.length){
+			freeList.remove(temp);
+			return tempBlock.baseAddress;
+		}
+
+		tempBlock.baseAddress += length;
+		tempBlock.length -= length;
+
+		return temp.baseAddress;
 	}
 
 	/**
@@ -71,7 +97,21 @@ public class MemorySpace {
 	 *            the starting address of the block to freeList
 	 */
 	public void free(int address) {
-		//// Write your code here
+		if (allocatedList.getSize() == 0) {
+			throw new IllegalArgumentException("index must be between 0 and size");
+		}
+
+		Node temp = allocatedList.getFirst();
+
+		while (temp != null) {
+			if (temp.block.baseAddress == address) {
+				allocatedList.remove(temp);
+				freeList.addLast(temp.block);
+				break;
+			}
+
+			temp = temp.next;
+		}
 	}
 	
 	/**
@@ -88,7 +128,22 @@ public class MemorySpace {
 	 * In this implementation Malloc does not call defrag.
 	 */
 	public void defrag() {
-		/// TODO: Implement defrag test
-		//// Write your code here
+		ListIterator firstIterator = freeList.iterator();
+		ListIterator secondIterator = freeList.iterator();
+		
+		while (firstIterator.hasNext()) {
+			MemoryBlock tMemoryBlock = firstIterator.next();
+			int baseSearch = tMemoryBlock.baseAddress + tMemoryBlock.length;
+
+			while (secondIterator.hasNext()){
+				MemoryBlock tMemoryBlock2 = secondIterator.next();
+				
+				if (baseSearch == tMemoryBlock2.baseAddress) {
+					tMemoryBlock.length += tMemoryBlock2.length;
+					freeList.remove(tMemoryBlock2);
+					defrag();
+				}
+			}
+		}
 	}
 }
